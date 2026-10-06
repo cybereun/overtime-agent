@@ -13,3 +13,6 @@
 - Updater independent review addressed early quitting on failed installation, tray reopening ready updates, and synchronous install error recovery.
 - Ruling: no signing certificate provisioned; unsigned NSIS with GitHub HTTPS and manifest SHA512 checking, no bundled GitHub tokens.
 - Test harness correction: Playwright waitForFunction does not await async snapshot predicates; replaced with real host-side awaited snapshot polling for acceptance checks.
+- Task 4: NSIS installation exit 0, installed binary passes 13 acceptance checks (auto-hide 30.10s), uninstall exit 0 with records preserved.
+- User requested final literal credit `@2026 j.u.Eun` beside the update-heading version and completed source/installer copy to Y:.
+- Final release assets rebuilt with credit. The task-created v1.0.0 tag will be aligned with the final source using a lease against its original SHA; release kept draft during replacement to prevent incomplete update metadata exposure.

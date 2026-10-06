@@ -25,6 +25,7 @@ try{
  await page.screenshot({path:'test-results/records.png'});
  await page.locator('.content').evaluate(el=>el.scrollTop=0);await page.screenshot({path:'test-results/main.png'});
  await page.getByRole('button',{name:'설정',exact:true}).click();
+ await page.getByRole('heading',{name:/앱 업데이트.*@2026 j.u.Eun/}).waitFor();
  const newWindow=application.waitForEvent('window');await page.getByRole('button',{name:'작은 알림창 테스트'}).click();const popup=await newWindow;await popup.getByRole('heading',{name:'알림이 이렇게 도착해요'}).waitFor();await popup.screenshot({path:'test-results/popup.png'});
  const focus=await application.evaluate(({BrowserWindow,screen})=>{const windows=BrowserWindow.getAllWindows(),popup=windows.find(w=>w.webContents.getURL().includes('view=popup')),main=windows.find(w=>!w.webContents.getURL().includes('view=popup'));return {main:main.isFocused(),popup:popup.isFocused(),visible:popup.isVisible(),alwaysOnTop:popup.isAlwaysOnTop(),bounds:popup.getBounds(),area:screen.getDisplayNearestPoint(screen.getCursorScreenPoint()).workArea};});assert.equal(focus.popup,false,'popup must not steal focus');assert.equal(focus.visible,true);assert.equal(focus.alwaysOnTop,true);assert.ok(Math.abs(focus.bounds.x-(focus.area.x+focus.area.width-398))<=2,'corner x (DPI rounding)');assert.ok(Math.abs(focus.bounds.y-(focus.area.y+focus.area.height-278))<=2,'corner y (DPI rounding)');
  await popup.getByRole('button',{name:'잘 보여요'}).click();

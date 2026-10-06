@@ -13,4 +13,6 @@
 
 ## Delivery
 
-Build, install/uninstall result and final file hashes will be recorded after packaging. Native sound playback confirms media playback; actual speaker volume depends on Windows device/user settings.
+NSIS v1.0.0 installation returned exit code 0. The installed executable passed all 13 desktop acceptance checks, including inactive placement, actual audio playback, 10-minute snooze persistence, active cancellation, and auto-hide measured at 30.10 seconds. Uninstall returned exit code 0 and removed the installed executable while preserving isolated records. Native sound playback confirms media playback; actual speaker volume depends on Windows device/user settings.
+
+Final branding: update heading displays `앱 업데이트 v1.0.0 @2026 j.u.Eun`. Actual GitHub install-and-restart upgrade results are saved separately after the final asset upload.
