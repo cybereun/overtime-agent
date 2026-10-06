@@ -8,7 +8,7 @@
 **Spec:** ../specs/2026-10-07-overtime-design.md
 
 ## Global Constraints
-- KST, no API key, no external service, no actual 인사랑 automation.
+- KST, no API key, no external service, no actual 나이스 automation.
 - Confirm before saving interpretation, close does not mean done.
 - Persist deliveries before showing, suppress duplicate reminders, recover one grouped summary.
 

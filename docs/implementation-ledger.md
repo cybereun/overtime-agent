@@ -16,3 +16,4 @@
 - Task 4: NSIS installation exit 0, installed binary passes 13 acceptance checks (auto-hide 30.10s), uninstall exit 0 with records preserved.
 - User requested final literal credit `@2026 j.u.Eun` beside the update-heading version and completed source/installer copy to Y:.
 - Final release assets rebuilt with credit. The task-created v1.0.0 tag will be aligned with the final source using a lease against its original SHA; release kept draft during replacement to prevent incomplete update metadata exposure.
+- Latest copy replaces all 인사랑 references with 나이스; Korean font changed to bundled Google Fonts Noto Sans KR Variable with OFL license. User confirmed no further request after an incomplete sentence.
