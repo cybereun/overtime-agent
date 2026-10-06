@@ -1,21 +1,26 @@
 import {app,BrowserWindow,Tray,Menu,ipcMain,powerMonitor,screen,nativeImage,dialog} from 'electron';
 import path from 'node:path';
+import fs from 'node:fs';
+import {autoUpdater} from 'electron-updater';
+import {UpdateController} from './updater';
 import { randomUUID } from 'node:crypto';
 import {applyProposal,dayKey,getSlots,type State,type Proposal,type AlertEvent} from '../src/core/model';
 import {parseCommand} from '../src/core/parser';
 import {collectDue} from '../src/core/scheduler';
 import {commandSchema,Store} from './store';
-import type {Snapshot,Reply,Command} from '../src/core/protocol';
+import type {Snapshot,Reply,Command,UpdateCommand} from '../src/core/protocol';
 
 app.setName('초과근무');
-if(process.env.OVERTIME_DATA_DIR)app.setPath('userData',process.env.OVERTIME_DATA_DIR);
-let main:BrowserWindow|null=null,popup:BrowserWindow|null=null,tray:Tray|null=null,quitting=false;
+const dataDir=process.env.OVERTIME_DATA_DIR||path.join(app.getPath('appData'),'초과근무');fs.mkdirSync(dataDir,{recursive:true});app.setPath('userData',dataDir);
+let main:BrowserWindow|null=null,popup:BrowserWindow|null=null,updateWindow:BrowserWindow|null=null,tray:Tray|null=null,quitting=false;
+let updates:UpdateController;
 let state:State,store:Store,active:AlertEvent|null=null,hideTimer:ReturnType<typeof setTimeout>|undefined;
 const drafts=new Map<string,Proposal>();
 const root=path.join(__dirname,'..');
 const icon=path.join(root,'assets','icon.png');
-const snapshot=():Snapshot=>({state,alert:active,desktop:true,storageWarning:store.warning||undefined});
-const emit=()=>{for(const win of [main,popup])if(win&&!win.isDestroyed())win.webContents.send('overtime:update',snapshot());};
+const snapshot=():Snapshot=>({state,alert:active,desktop:true,storageWarning:store.warning||undefined,update:updates?.state});
+const emit=()=>{for(const win of [main,popup,updateWindow])if(win&&!win.isDestroyed())win.webContents.send('overtime:update',snapshot());};
+function log(message:string){try{const file=path.join(app.getPath('userData'),'update.log');if(fs.existsSync(file)&&fs.statSync(file).size>1024*1024)fs.renameSync(file,`${file}.old`);fs.appendFileSync(file,`${new Date().toISOString()} ${message}\n`);}catch{/* Logging must not prevent reminders. */}}
 function commit(next:State){store.save(next);state=next;reconcileAlert();emit();}
 function reconcileAlert(){if(active&&active.kind!=='test'){const ids=new Set(getSlots(state).filter(s=>!state.records[s.id]).map(s=>s.id));active.slotIds=active.slotIds.filter(id=>ids.has(id));if(!active.slotIds.length)hidePopup();}}
 function hidePopup(){if(hideTimer)clearTimeout(hideTimer);active=null;popup?.hide();emit();}
@@ -31,11 +36,15 @@ function makeWindow(){
  main.on('close',event=>{if(!quitting){event.preventDefault();main?.hide();}});
 }
 function showMain(date?:string){if(main?.isMinimized())main.restore();main?.show();main?.focus();if(date)main?.webContents.send('overtime:navigate',date);}
+function showUpdate(){
+ if(!updateWindow){updateWindow=new BrowserWindow({width:410,height:340,resizable:false,show:false,title:'초과근무 업데이트',icon,autoHideMenuBar:true,backgroundColor:'#f5f3ff',webPreferences:{preload:path.join(__dirname,'preload.cjs'),contextIsolation:true,nodeIntegration:false,sandbox:true}});load(updateWindow,'update');updateWindow.once('ready-to-show',()=>updateWindow?.showInactive());updateWindow.on('close',event=>{if(!quitting){event.preventDefault();updateWindow?.hide();}});}
+ else {emit();updateWindow.showInactive();}
+}
 function placePopup(){if(!popup)return;const area=screen.getDisplayNearestPoint(screen.getCursorScreenPoint()).workArea;popup.setBounds({x:area.x+area.width-380-18,y:area.y+area.height-260-18,width:380,height:260});}
 function notify(event:AlertEvent){
  active=event;
  if(!popup){
-  popup=new BrowserWindow({width:380,height:260,show:false,frame:false,resizable:false,alwaysOnTop:true,skipTaskbar:true,backgroundColor:'#f6f3ff',icon,webPreferences:{preload:path.join(__dirname,'preload.cjs'),contextIsolation:true,nodeIntegration:false,sandbox:true,autoplayPolicy:'no-user-gesture-required'}});
+  popup=new BrowserWindow({width:380,height:260,show:false,frame:false,resizable:false,focusable:false,alwaysOnTop:true,skipTaskbar:true,backgroundColor:'#f6f3ff',icon,webPreferences:{preload:path.join(__dirname,'preload.cjs'),contextIsolation:true,nodeIntegration:false,sandbox:true,autoplayPolicy:'no-user-gesture-required'}});
   load(popup,'popup');popup.on('close',e=>{if(!quitting){e.preventDefault();hidePopup();}});
   popup.once('ready-to-show',()=>{placePopup();popup?.showInactive();emit();});
  } else {placePopup();emit();popup.showInactive();}
@@ -48,7 +57,7 @@ function tick(recover=false){
 function setAutoStart(value:boolean){app.setLoginItemSettings({openAtLogin:value,path:app.getPath('exe'),args:['--background']});}
 async function handle(input:unknown):Promise<Reply>{
  try{
-  const c=commandSchema.parse(input) as Command;
+  const c=commandSchema.parse(input) as Command|UpdateCommand;
   if(c.type==='interpret'){
    const base=/오늘|내일|모레/.test(c.text)?dayKey():c.date;
    const parsed=parseCommand(c.text,base,state);
@@ -77,6 +86,10 @@ async function handle(input:unknown):Promise<Reply>{
    if(c.autoStart!==undefined&&c.autoStart!==state.settings.autoStart)setAutoStart(c.autoStart);
    try{commit(next);}catch(error){if(c.autoStart!==undefined)setAutoStart(state.settings.autoStart);throw error;}
   } else if(c.type==='hidePopup')hidePopup();
+  else if(c.type==='checkUpdate'){if(['available','downloading','ready'].includes(updates.state.status))showUpdate();else await updates.check();}
+  else if(c.type==='downloadUpdate')await updates.download();
+  else if(c.type==='installUpdate')updates.install();
+  else if(c.type==='hideUpdate')updateWindow?.hide();
   else if(c.type==='show'){showMain(c.date);hidePopup();}
   else if(c.type==='test')notify({id:`test:${Date.now()}`,kind:'test',slotIds:[],title:'알림이 이렇게 도착해요',body:'소리와 작은 창을 확인해 주세요. 실제 근무 기록에는 영향을 주지 않아요.'});
   return {snapshot:snapshot()};
@@ -89,13 +102,17 @@ else {
  app.on('window-all-closed',()=>{});
  void app.whenReady().then(()=>{
   store=new Store(app.getPath('userData'));state=store.load();
-  ipcMain.handle('overtime:snapshot',event=>{if(![main?.webContents,popup?.webContents].includes(event.sender))throw new Error('허용되지 않은 창');return snapshot();});
-  ipcMain.handle('overtime:command',(event,input)=>{if(![main?.webContents,popup?.webContents].includes(event.sender))throw new Error('허용되지 않은 창');return handle(input);});
+  log(`startup ${app.getVersion()}`);
+  autoUpdater.logger={info:message=>log(String(message)),warn:message=>log(String(message)),error:message=>log(String(message)),debug:()=>{}};
+  updates=new UpdateController(autoUpdater,app.getVersion(),app.isPackaged,emit,showUpdate,()=>{store.save(state);log('install requested; restart after install');},log);
+  ipcMain.handle('overtime:snapshot',event=>{if(![main?.webContents,popup?.webContents,updateWindow?.webContents].includes(event.sender))throw new Error('허용되지 않은 창');return snapshot();});
+  ipcMain.handle('overtime:command',(event,input)=>{if(![main?.webContents,popup?.webContents,updateWindow?.webContents].includes(event.sender))throw new Error('허용되지 않은 창');return handle(input);});
   makeWindow();
   tray=new Tray(nativeImage.createFromPath(icon).resize({width:20,height:20}));tray.setToolTip('초과근무 · 알림 친구');
-  tray.setContextMenu(Menu.buildFromTemplate([{label:'대화창 열기',click:()=>showMain()},{label:'알림 테스트',click:()=>void handle({type:'test'})},{type:'separator'},{label:'완전히 종료',click:()=>{quitting=true;app.quit();}}]));tray.on('double-click',()=>showMain());tray.on('click',()=>showMain());
+  tray.setContextMenu(Menu.buildFromTemplate([{label:'대화창 열기',click:()=>showMain()},{label:'알림 테스트',click:()=>void handle({type:'test'})},{label:'업데이트 확인',click:()=>{showMain();void handle({type:'checkUpdate'});}},{type:'separator'},{label:'완전히 종료',click:()=>{quitting=true;app.quit();}}]));tray.on('double-click',()=>showMain());tray.on('click',()=>showMain());
   if(process.argv.includes('--background'))main?.once('ready-to-show',()=>main?.hide());
   powerMonitor.on('resume',()=>tick(true));powerMonitor.on('unlock-screen',()=>tick(true));
   setInterval(()=>tick(),1000);setTimeout(()=>tick(true),1500);
+  if(app.isPackaged){setTimeout(()=>void updates.check(),10000);setInterval(()=>void updates.check(),6*3600_000);}
  }).catch(error=>{dialog.showErrorBox('초과근무를 시작하지 못했어요',String(error));app.quit();});
 }

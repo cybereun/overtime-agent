@@ -17,7 +17,8 @@ export const commandSchema=z.discriminatedUnion('type',[
  z.object({type:z.literal('deleteDay'),date}).strict(),
  z.object({type:z.literal('settings'),sound:z.boolean().optional(),autoStart:z.boolean().optional(),onboarded:z.boolean().optional(),nextDayMinute:z.number().int().min(0).max(1439).optional()}).strict(),
  z.object({type:z.literal('snooze'),ids}).strict(),
- z.object({type:z.literal('hidePopup')}).strict(),z.object({type:z.literal('show'),date:date.optional()}).strict(),z.object({type:z.literal('test')}).strict()
+ z.object({type:z.literal('hidePopup')}).strict(),z.object({type:z.literal('show'),date:date.optional()}).strict(),z.object({type:z.literal('test')}).strict(),
+ z.object({type:z.literal('checkUpdate')}).strict(),z.object({type:z.literal('downloadUpdate')}).strict(),z.object({type:z.literal('installUpdate')}).strict(),z.object({type:z.literal('hideUpdate')}).strict()
 ]);
 export class Store {
  readonly file:string; warning='';

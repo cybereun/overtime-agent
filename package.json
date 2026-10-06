@@ -1,6 +1,6 @@
 {
   "name": "overtime-agent",
-  "version": "0.1.0",
+  "version": "1.0.0",
   "private": true,
   "type": "module",
   "description": "대화로 설정하는 초과근무 확인 알림",
@@ -11,10 +11,11 @@
     "build": "tsc --noEmit && vite build && node scripts/build-electron.mjs",
     "test": "vitest run",
     "test:desktop": "node scripts/desktop-test.mjs",
-    "package": "npm run build && electron-builder --win nsis --x64",
+    "package": "npm run build && electron-builder --win nsis --x64 --publish never",
     "preview": "vite preview --host 127.0.0.1"
   },
   "dependencies": {
+    "electron-updater": "^6.8.9",
     "react": "^19.2.0",
     "react-dom": "^19.2.0",
     "zod": "^4.6.5"
@@ -49,8 +50,9 @@
     "win": {
       "icon": "assets/icon.ico",
       "target": "nsis",
-      "signAndEditExecutable": false
+      "signExecutable": false
     },
+    "publish": [{"provider":"github","owner":"cybereun","repo":"overtime-agent","releaseType":"release"}],
     "nsis": {
       "oneClick": false,
       "perMachine": false,
