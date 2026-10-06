@@ -15,4 +15,12 @@
 
 NSIS v1.0.0 installation returned exit code 0. The installed executable passed all 13 desktop acceptance checks, including inactive placement, actual audio playback, 10-minute snooze persistence, active cancellation, and auto-hide measured at 30.10 seconds. Uninstall returned exit code 0 and removed the installed executable while preserving isolated records. Native sound playback confirms media playback; actual speaker volume depends on Windows device/user settings.
 
-Final branding: update heading displays `앱 업데이트 v1.0.0 @2026 j.u.Eun`. Actual GitHub install-and-restart upgrade results are saved separately after the final asset upload.
+Final branding: update heading displays `앱 업데이트 v1.0.0 @2026 j.u.Eun`. Every product screen uses 나이스; the provider attribution was removed from settings and the update-popup footer. Bundled Noto Sans KR custom-font rendering was verified through Chromium platform-font data in the installed executable.
+
+## Actual online update
+
+The installed v0.9.0 test fixture detected the public v1.0.0 release, downloaded the real GitHub installer, verified it, ran NSIS, and restarted as v1.0.0. Executable metadata reported `1.0.0.0`; the newly launched process and startup log confirmed restart. Isolated recorded work data remained unchanged. Result: PASS (`검증자료/upgrade-result.json`).
+
+NSIS relaunches through Explorer, so test-only data-dir environment overrides are not propagated. The QA harness checks the real startup diagnostic in the normal app-data folder and the installed executable version instead of assuming that test environment variables persist.
+
+The final installed-app appearance check verified the update footer contains only `현재 v1.0.0` and the saved-record notice. Screenshot: `검증자료/update-footer-final.png`. Windows GitHub Actions build passed for the final product code.

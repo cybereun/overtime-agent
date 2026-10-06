@@ -19,3 +19,4 @@
 - Latest copy replaces all 인사랑 references with 나이스; Korean font changed to bundled Google Fonts Noto Sans KR Variable with OFL license. User confirmed no further request after an incomplete sentence.
 - User removed provider attribution from every product screen; update UI shows version, credit and progress only. Appearance check verifies no GitHub wording is visible.
 - Actual upgrade installed v1.0.0 and relaunched successfully; initial test expected the diagnostic in the isolated data directory, but NSIS Explorer launch drops test-only environment variables. QA now checks a new startup in the normal data directory plus the running installed executable version and preserved isolated records.
+- Final actual online upgrade: PASS from installed 0.9.0 to public 1.0.0; startup timestamp 2026-10-06T15:55:45.080Z (KST 2026-10-07 00:55:45). Installed font/credit/나이스/no-provider-text checks PASS. Test fixture uninstalled after verification.
