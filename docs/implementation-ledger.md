@@ -17,3 +17,5 @@
 - User requested final literal credit `@2026 j.u.Eun` beside the update-heading version and completed source/installer copy to Y:.
 - Final release assets rebuilt with credit. The task-created v1.0.0 tag will be aligned with the final source using a lease against its original SHA; release kept draft during replacement to prevent incomplete update metadata exposure.
 - Latest copy replaces all 인사랑 references with 나이스; Korean font changed to bundled Google Fonts Noto Sans KR Variable with OFL license. User confirmed no further request after an incomplete sentence.
+- User removed provider attribution from every product screen; update UI shows version, credit and progress only. Appearance check verifies no GitHub wording is visible.
+- Actual upgrade installed v1.0.0 and relaunched successfully; initial test expected the diagnostic in the isolated data directory, but NSIS Explorer launch drops test-only environment variables. QA now checks a new startup in the normal data directory plus the running installed executable version and preserved isolated records.
